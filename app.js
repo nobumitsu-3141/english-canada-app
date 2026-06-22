@@ -84,7 +84,9 @@ function renderToday(){
   const doneN = tasks.filter(isDone).length;
   $("todayProg").textContent = allDone ? "今日のメニュー完了 🎉" : `今日 ${doneN}/${tasks.length} 完了 — 続けましょう`;
   $("doneBanner").style.display = allDone ? "block":"none";
+  renderCharCard();
   renderHeader();
+  checkLevelUp();
 }
 function srsMetaLine(){ const due=dueIds().length, nw=newRemaining(); return `復習 ${due}枚` + (nw>0?` ・ 新規 ${nw}枚`:""); }
 
@@ -240,7 +242,7 @@ function grade(q){ const id=Q.list[Q.i]; const isNew=!S.srs[id]; sm2(id,q);
   const d=ensureDay(todayISO()); if(isNew)d.newSrs=(d.newSrs||0)+1; d.ts=Date.now(); save();
   addField("srs",1); markDone("srs");
   if(q<3){ Q.list.push(id); } // もう一度はセッション末尾へ
-  Q.i++; scheduleSync(); showCard();
+  Q.i++; scheduleSync(); checkLevelUp(); showCard();
 }
 function sm2(id,q){ let s=S.srs[id]||{ef:2.5,interval:0,reps:0,due:todayISO(),last:0};
   if(q<3){ s.reps=0; s.interval=1; }
@@ -386,6 +388,65 @@ document.addEventListener("keydown",e=>{
 function maybeWelcome(){ if(localStorage.getItem("engca_seen"))return;
   const o=$("welcome"); if(o){ o.style.display="flex"; } }
 function closeWelcome(goSync){ localStorage.setItem("engca_seen","1"); const o=$("welcome"); if(o)o.style.display="none"; if(goSync)go("settings"); }
+
+// ===== キャラクター育成（XP/レベル/称号/実績 — すべて記録から算出） =====
+const STAGES=[
+  {min:1,  ja:"医学生英語",         en:"Pre-clinical English", av:"🧑‍🎓"},
+  {min:4,  ja:"臨床英語ビギナー",   en:"Clinical Beginner",    av:"🩺"},
+  {min:7,  ja:"研修医レベル",       en:"Resident",             av:"🧑‍⚕️"},
+  {min:11, ja:"OETチャレンジャー",  en:"OET Challenger",       av:"📝"},
+  {min:16, ja:"クリニカルフェロー", en:"Clinical Fellow",      av:"🥼"},
+  {min:22, ja:"指導医 (Attending)", en:"Attending",            av:"👨‍⚕️"},
+  {min:29, ja:"准教授",             en:"Assistant Professor",  av:"👨‍🏫"},
+  {min:37, ja:"FRCPC / 教授",       en:"Professor",            av:"🎓"},
+];
+function threeAxis(d){ return (d.listen||0)>0 && ((d.speak||0)>0||(d.letter||0)>0) && (d.srs||0)>0; }
+function xpOfDay(d){ return (d.listen||0)+(d.speak||0)+(d.srs||0)*2+(d.letter||0)*40+(threeAxis(d)?20:0); }
+function totalXP(){ return Object.values(S.days).reduce((a,d)=>a+xpOfDay(d),0); }
+function levelInfo(xp){ let lvl=1, base=0, cost=120; while(xp>=base+cost){ base+=cost; lvl++; cost=80+40*lvl; }
+  let ci=0; for(let i=0;i<STAGES.length;i++){ if(lvl>=STAGES[i].min)ci=i; }
+  return {lvl, into:xp-base, span:cost, stage:STAGES[ci], ci}; }
+function actDay(x){ return x&&((x.listen||0)+(x.speak||0)+(x.srs||0))>0; }
+function moodLine(){ const t=todayISO(); if(actDay(S.days[t]))return "絶好調！今日も積み上げ中 🔥";
+  if(actDay(S.days[addDays(t,-1)]))return "連続記録キープ中。今日もどれか1つ 🙂"; return "ひさしぶり！軽く1つから 💪"; }
+function agg(){ let srs=0,letter=0,listen=0,maxWpm=0; const active=[];
+  Object.entries(S.days).forEach(([k,d])=>{ srs+=d.srs||0; letter+=d.letter||0; listen+=d.listen||0; if(d.wpm!=null)maxWpm=Math.max(maxWpm,d.wpm); if(actDay(d))active.push(k); });
+  active.sort(); let best=0,run=0,prev=null; active.forEach(k=>{ run=(prev&&k===addDays(prev,1))?run+1:1; best=Math.max(best,run); prev=k; });
+  let bestWeek=0; Object.keys(S.days).forEach(k=>{ let s=0; for(let i=0;i<7;i++){ const kk=addDays(k,-i); if(S.days[kk])s+=(S.days[kk].listen||0)+(S.days[kk].speak||0);} bestWeek=Math.max(bestWeek,s); });
+  const cats=new Set(); Object.keys(S.srs).forEach(id=>{ const c=DECK.cards.find(x=>x.id===id); if(c)cats.add(c.cat); });
+  const allCats=Object.keys(DECK.meta.categories||{}).length||new Set(DECK.cards.map(c=>c.cat)).size;
+  return {srs,letter,listen,maxWpm,best,bestWeek,catCount:cats.size,allCats}; }
+function achievements(){ const a=agg(); return [
+  {ic:"🔥",nm:"継続 7日",cur:a.best,tg:7},
+  {ic:"🔥",nm:"継続 30日",cur:a.best,tg:30},
+  {ic:"💯",nm:"継続 100日",cur:a.best,tg:100},
+  {ic:"🗂️",nm:"SRS 100枚",cur:a.srs,tg:100},
+  {ic:"🗂️",nm:"SRS 1000枚",cur:a.srs,tg:1000},
+  {ic:"✉️",nm:"紹介状 10通",cur:a.letter,tg:10},
+  {ic:"✉️",nm:"紹介状 50通",cur:a.letter,tg:50},
+  {ic:"🎧",nm:"インプット 10h",cur:Math.floor(a.listen/60),tg:10},
+  {ic:"🎧",nm:"インプット 50h",cur:Math.floor(a.listen/60),tg:50},
+  {ic:"🗣️",nm:"wpm 130突破",cur:a.maxWpm,tg:130},
+  {ic:"📚",nm:"全カテゴリ制覇",cur:a.catCount,tg:a.allCats},
+  {ic:"🎯",nm:"週 200分達成",cur:a.bestWeek,tg:200},
+]; }
+function renderCharCard(){ const xp=totalXP(), li=levelInfo(xp), pct=Math.min(100,Math.round(li.into/li.span*100));
+  const ac=achievements(), unlocked=ac.filter(x=>x.cur>=x.tg).length;
+  $("charCard").innerHTML=`<div class="avatar">${li.stage.av}<span class="lv">Lv${li.lvl}</span></div>
+    <div class="charInfo"><div class="title">${li.stage.ja}</div><div class="mood">${moodLine()}</div>
+    <div class="xpbar"><i style="width:${pct}%"></i></div>
+    <div class="xpnum">XP ${xp} ・ 次まで ${li.span-li.into} ・ 実績 ${unlocked}/${ac.length} ・ タップで詳細</div></div>`; }
+function checkLevelUp(){ const li=levelInfo(totalXP()); const raw=localStorage.getItem("engca_lvl");
+  if(raw===null){ localStorage.setItem("engca_lvl",li.lvl); return; }
+  if(li.lvl>+raw){ localStorage.setItem("engca_lvl",li.lvl); toast(`🎉 レベルアップ！ Lv${li.lvl} ・ ${li.stage.ja}`); }
+  else if(li.lvl<+raw){ localStorage.setItem("engca_lvl",li.lvl); } }
+function openBuddy(){ renderBuddy(); $("buddyModal").style.display="flex"; }
+function closeBuddy(){ $("buddyModal").style.display="none"; }
+function renderBuddy(){ const xp=totalXP(), li=levelInfo(xp), pct=Math.min(100,Math.round(li.into/li.span*100));
+  $("bAvatar").textContent=li.stage.av; $("bTitle").textContent=`Lv${li.lvl} ${li.stage.ja}`; $("bSub").textContent=li.stage.en;
+  $("bXp").style.width=pct+"%"; $("bXpNum").textContent=`XP ${xp} ・ 次のレベルまで ${li.span-li.into}`;
+  $("bBadges").innerHTML=achievements().map(a=>{ const done=a.cur>=a.tg; return `<div class="badge ${done?'':'lock'}"><div class="bi">${done?a.ic:'🔒'}</div><div class="bn">${a.nm}</div><div class="bp">${Math.min(a.cur,a.tg)}/${a.tg}</div></div>`; }).join("");
+  $("bLadder").innerHTML=STAGES.map((s,i)=>`<div class="step ${i===li.ci?'cur':''} ${i<li.ci?'done2':''}"><span>${s.av}</span><span>Lv${s.min}〜 ${s.ja}（${s.en}）</span></div>`).join(""); }
 
 // ===== アプリ復帰時に最新へ自動同期（端末をまたいだ鮮度確保） =====
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden && endpoint()){ cloudSync(true).then(()=>{ if(view==="today")renderToday(); }); } });
