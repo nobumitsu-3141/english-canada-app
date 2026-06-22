@@ -76,6 +76,16 @@
   .legend{font-size:11px;color:var(--muted);display:flex;gap:14px;margin-top:8px}
   .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
   .mut{color:var(--muted);font-size:12px} .ok{color:var(--good)} .lo{color:var(--warn)}
+  .donerow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--good);font-weight:600;margin:10px 0 4px}
+  button.sm{padding:4px 10px;font-size:12px;margin:0}
+  .navbadge{position:absolute;top:4px;margin-left:14px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;border-radius:9px;padding:0 4px;display:none}
+  .nav a{position:relative}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:440px;width:100%}
+  .modal h3{margin:0 0 8px;font-size:18px}
+  .browseItem{border-bottom:1px solid var(--line);padding:8px 0}
+  .browseItem .f{font-weight:600} .browseItem .b{color:var(--good)} .browseItem .n{font-size:12px;color:var(--muted)}
+  .catHdr{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px;font-weight:700}
   .card3d{text-align:center}
   .card3d .front{font-size:22px;font-weight:600;margin:24px 8px}
   .card3d .back{font-size:24px;font-weight:700;color:var(--good);margin:8px}
@@ -99,6 +109,7 @@
   </header>
   <div class="sub" id="todayLabel"></div>
   <div class="gstats" id="gstats"></div>
+  <div class="sub" id="todayProg" style="margin-top:-6px"></div>
 
   <!-- ===== TODAY ===== -->
   <section class="view on" id="v-today">
@@ -119,8 +130,14 @@
       <div class="btns">
         <button onclick="startSrs()">▶ 今日の復習を始める</button>
         <button class="ghost" onclick="startSrs(true)">全カードから練習</button>
+        <button class="ghost" onclick="toggleBrowse()">📖 一覧で見る</button>
       </div>
       <div id="catList" style="margin-top:12px"></div>
+    </div>
+    <div class="panel" id="srsBrowse" style="display:none">
+      <h2>フレーズ一覧（カテゴリ別）</h2>
+      <input type="text" id="browseSearch" placeholder="検索（日本語/英語）" oninput="renderBrowse()">
+      <div id="browseList" style="margin-top:10px"></div>
     </div>
     <div class="panel" id="srsPlay" style="display:none">
       <div class="mut" id="srsProg" style="text-align:right"></div>
@@ -203,6 +220,10 @@
       <div class="btns"><button onclick="saveBaseline()">ベースラインを保存</button></div>
       <div id="baseShow" class="mut" style="margin-top:8px"></div>
     </div>
+    <div class="panel">
+      <h2>今月のレビュー（<span id="reviewMonth"></span>・毎月末15分）</h2>
+      <div id="reviewList"></div>
+    </div>
   </section>
 
   <!-- ===== SETTINGS ===== -->
@@ -227,6 +248,7 @@
         <button class="ghost" onclick="document.getElementById('imp').click()">Import</button>
         <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(event)">
       </div>
+      <div id="backupMsg" class="mut" style="margin-top:8px"></div>
     </div>
     <div class="panel">
       <h2>設定</h2>
@@ -239,16 +261,32 @@
 
 <nav class="nav">
   <a id="n-today" class="on" onclick="go('today')"><span class="ic">📅</span>今日</a>
-  <a id="n-srs" onclick="go('srs')"><span class="ic">🗂️</span>復習</a>
+  <a id="n-srs" onclick="go('srs')"><span class="ic">🗂️</span>復習<span class="navbadge" id="srsBadge"></span></a>
   <a id="n-stats" onclick="go('stats')"><span class="ic">📈</span>記録</a>
   <a id="n-plan" onclick="go('plan')"><span class="ic">🗺️</span>計画</a>
   <a id="n-settings" onclick="go('settings')"><span class="ic">⚙️</span>設定</a>
 </nav>
 <div class="toast" id="toast"></div>
 
-<script src="deck.js"></script>
-<script src="content.js"></script>
-<script src="app.js"></script>
+<div class="modal" id="welcome">
+  <div class="box">
+    <h3>🇨🇦 ようこそ</h3>
+    <p class="big">トロントの麻酔科で働くための英語アプリです。毎日 <b>「今日」タブを上から順に</b> こなすだけ。</p>
+    <ul class="mut" style="padding-left:18px;line-height:1.7">
+      <li>🎧 インプット → 🗣️ アウトプット → 🗂️ SRS の3軸を毎日</li>
+      <li>進捗は Mac2台＋iPhone で自動共有（同期を設定すると有効）</li>
+      <li>iPhoneは「ホーム画面に追加」でアプリのように使えます</li>
+    </ul>
+    <div class="btns">
+      <button onclick="closeWelcome(true)">同期を設定する</button>
+      <button class="ghost" onclick="closeWelcome(false)">あとで</button>
+    </div>
+  </div>
+</div>
+
+<script src="deck.js?v=4"></script>
+<script src="content.js?v=4"></script>
+<script src="app.js?v=4"></script>
 <script>
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>

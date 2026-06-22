@@ -52,6 +52,18 @@ Patient I'll hand over: a 62-year-old, post-CABG, now hypotensive. I'll start no
 Listen, then ask me 3 follow-up questions an attending would actually ask, and score my presentation
 on structure, signposting, pace, and academic register. Then have me re-present incorporating your feedback.
 Case: make one up for me (anesthesia-relevant).` },
+  { id:7, title:"術後回診 / PACU (Post-op round)", prompt:
+`Role-play: You are a patient in the recovery room (PACU) one hour after a laparoscopic appendicectomy under GA.
+You have moderate pain (6/10), mild nausea, and you are a little groggy. I am the anesthesiologist doing a post-op round.
+Answer naturally; mention pain and nausea only if I ask the right questions.
+Stay in character until "END", then score me on post-op assessment structure, empathy,
+plain-language explanation of pain/PONV management, and safety-netting.` },
+  { id:8, title:"無痛分娩の説明 (Labour epidural counselling)", prompt:
+`Role-play: You are a 30-year-old woman in early labour, 3 cm dilated, requesting an epidural.
+You are in pain and anxious, worried about a needle in your back and about not being able to push.
+I am the anesthesiologist counselling and consenting you. Ask realistic questions
+("Will it stop me pushing?", "Could it paralyse me?", "How long does it take?").
+Stay in character until "END", then score clarity, risk communication, empathy, and consent quality.` },
   { id:9, title:"雑談 / チーム対人 (Small talk)", prompt:
 `You are a Canadian OR nurse I work with daily. Run 5 minutes of realistic between-cases small talk
 (weather, hockey, the weekend, a tricky case). Keep me talking, then score how natural my small talk was
@@ -112,6 +124,25 @@ Event:     Previous GA (2 years ago) — DIFFICULT INTUBATION documented: Cormac
 PMH:       Rheumatoid arthritis (reduced neck extension, possible atlanto-axial involvement). GORD.
 Exam:      Mouth opening 3 cm. Thyromental distance reduced. Mallampati III.
 Plan:      Flag difficult airway. Request anaesthetic pre-assessment for airway plan
-           (awake videolaryngoscopy vs other), cervical spine review, and clear documentation/alert.` }
+           (awake videolaryngoscopy vs other), cervical spine review, and clear documentation/alert.` },
+  { title:"術前評価 → 循環器（収縮期雑音・AS疑い）", task:"循環器への紹介状（180–200語）。待機手術前に心エコーと評価を依頼。", notes:
+`Patient:   Mrs Hanako Ito, 74, female.
+Planned:   Elective hip hemiarthroplasty (after a fall), in ~2 weeks (semi-urgent).
+PMH:       Hypertension. Osteoporosis. CKD stage 3.
+Finding:   Ejection systolic murmur, right upper sternal border, radiating to the carotids.
+           Reduced exercise tolerance; one episode of exertional pre-syncope.
+Exam:      BP 138/86. Slow-rising pulse. Chest clear. No peripheral oedema.
+Concern:   Possible significant aortic stenosis → raised peri-operative risk.
+Plan:      Request urgent echocardiography and cardiology assessment to grade the valve
+           and advise on anaesthetic risk and optimisation before surgery.` },
+  { title:"退院サマリー → かかりつけ医 (Discharge to GP)", task:"GP宛の退院サマリー（180–200語）。術後経過と今後の管理を引き継ぎ。", notes:
+`Patient:   Mr Daichi Saito, 60, male.
+Procedure: Elective laparoscopic cholecystectomy under GA, 2 days ago. Uneventful.
+Anaes:     GA with LMA. Multimodal analgesia. No PONV. No airway problems.
+Course:    Mobilised day 0; tolerating diet; pain controlled on oral analgesia; wounds clean and dry.
+Meds:      Discharge on paracetamol + a short NSAID course; resume metformin and amlodipine.
+Follow-up: Remove dressings day 7; surgical review in 4 weeks.
+Action:    GP to recheck blood pressure (was 150/92 pre-operatively) and review diabetic control.
+Task:      Write a brief discharge letter to the GP summarising the admission and the actions needed.` }
 ]
 };
