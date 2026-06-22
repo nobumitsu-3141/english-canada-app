@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="English Canada">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>English for Canada — 麻酔科 / OET</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --ink:#e6edf3; --muted:#8b98a8;
+    --accent:#4aa3ff; --good:#3ecf8e; --warn:#ffb454; --bad:#ff6b6b; --line:#2b3542;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f5f7fa; --panel:#ffffff; --panel2:#eef2f7; --ink:#1b2330; --muted:#5b6675; --accent:#1f6feb; --good:#1a9e63; --warn:#b9791d; --bad:#d23c3c; --line:#dde3ea; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;-webkit-text-size-adjust:100%}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 96px;padding-top:max(16px,env(safe-area-inset-top))}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  h1{font-size:18px;margin:0}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
+  .gstats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .gstat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;color:var(--muted)}
+  .gstat b{display:block;font-size:16px;color:var(--ink)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  h2{font-size:13px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .axis{display:flex;gap:14px;margin:4px 0 14px}
+  .ax{flex:1;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 6px}
+  .ax .ic{font-size:20px} .ax .nm{font-size:11px;color:var(--muted)} .ax.done{border-color:var(--good)} .ax.done .ic{filter:none}
+  .ax:not(.done) .ic{opacity:.32;filter:grayscale(1)}
+  .task{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--panel)}
+  .task.done{opacity:.7}
+  .thead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
+  .chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+  .task.done .chk{background:var(--good);border-color:var(--good)}
+  .tinfo{flex:1;min-width:0}
+  .tinfo .nm{font-weight:600;font-size:15px}
+  .tinfo .mt{font-size:12px;color:var(--muted)}
+  .caret{color:var(--muted);font-size:13px;transition:transform .2s}
+  .task.open .caret{transform:rotate(90deg)}
+  .tbody{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+  .task.open .tbody{display:block}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input[type=number],input[type=text],input[type=date],textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);
+    color:var(--ink);border-radius:9px;padding:10px;font-size:15px;font-family:inherit}
+  textarea{min-height:120px;resize:vertical;line-height:1.5}
+  .pre{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px;font-size:13px;white-space:pre-wrap;line-height:1.5}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row>*{flex:1;min-width:90px}
+  button{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11px 14px;font-size:14px;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+  button.good{background:var(--good)} button.warn{background:var(--warn);color:#1b2330} button.bad{background:var(--bad)}
+  button:disabled{opacity:.5}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .timer{font-size:40px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;margin:8px 0}
+  .nav{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);display:flex;
+    padding-bottom:env(safe-area-inset-bottom)}
+  .nav a{flex:1;text-align:center;padding:9px 2px 7px;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:none}
+  .nav a.on{color:var(--accent)}
+  .nav .ic{font-size:20px;display:block}
+  .view{display:none} .view.on{display:block}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}
+  .bar{display:flex;align-items:flex-end;gap:3px;height:110px;padding-top:8px}
+  .bar .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;height:100%}
+  .bar .fill{width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+  .bar .fill.sp{background:var(--good)}
+  .bar .d{font-size:8px;color:var(--muted)}
+  .legend{font-size:11px;color:var(--muted);display:flex;gap:14px;margin-top:8px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+  .mut{color:var(--muted);font-size:12px} .ok{color:var(--good)} .lo{color:var(--warn)}
+  .card3d{text-align:center}
+  .card3d .front{font-size:22px;font-weight:600;margin:24px 8px}
+  .card3d .back{font-size:24px;font-weight:700;color:var(--good);margin:8px}
+  .card3d .note{font-size:14px;color:var(--muted);margin:8px}
+  .tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:2px 10px;font-size:11px;color:var(--muted);margin:2px}
+  .toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#000;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.2s;z-index:50;pointer-events:none;max-width:90%}
+  .toast.show{opacity:.92}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .pill.on{color:var(--good);border-color:var(--good)} .pill.off{color:var(--warn);border-color:var(--warn)}
+  details{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px}
+  summary{cursor:pointer;font-weight:600;font-size:14px}
+  a.link{color:var(--accent)}
+  .big{font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🇨🇦 English for Canada</h1>
+    <span id="syncPill" class="pill off" onclick="go('settings')">⇅ 同期</span>
+  </header>
+  <div class="sub" id="todayLabel"></div>
+  <div class="gstats" id="gstats"></div>
+
+  <!-- ===== TODAY ===== -->
+  <section class="view on" id="v-today">
+    <div class="axis" id="axis"></div>
+    <div id="tasks"></div>
+    <div class="panel" id="doneBanner" style="display:none;text-align:center">
+      <div style="font-size:34px">🎉</div>
+      <div class="big" style="font-weight:700">今日のメニュー完了！</div>
+      <div class="mut">連続記録を伸ばしましょう。明日もこの画面を開くだけ。</div>
+    </div>
+  </section>
+
+  <!-- ===== SRS ===== -->
+  <section class="view" id="v-srs">
+    <div class="panel" id="srsHome">
+      <h2>復習（医療英語デッキ）</h2>
+      <div id="srsStat" class="mut"></div>
+      <div class="btns">
+        <button onclick="startSrs()">▶ 今日の復習を始める</button>
+        <button class="ghost" onclick="startSrs(true)">全カードから練習</button>
+      </div>
+      <div id="catList" style="margin-top:12px"></div>
+    </div>
+    <div class="panel" id="srsPlay" style="display:none">
+      <div class="mut" id="srsProg" style="text-align:right"></div>
+      <div class="card3d">
+        <div class="front" id="cFront"></div>
+        <div id="cReveal" style="display:none">
+          <div class="back" id="cBack"></div>
+          <div class="note" id="cNote"></div>
+          <div id="cTags"></div>
+        </div>
+      </div>
+      <div class="btns" id="srsBtns"></div>
+      <button class="ghost" style="margin-top:8px;width:100%" onclick="endSrs()">終了して戻る</button>
+    </div>
+  </section>
+
+  <!-- ===== STATS ===== -->
+  <section class="view" id="v-stats">
+    <div class="panel"><h2>KPI（今週）</h2><div id="kpi"></div></div>
+    <div class="panel"><h2>直近14日（聴=青 / 話・書=緑、分）</h2><div class="bar" id="chart"></div>
+      <div class="legend"><span><span class="dot" style="background:var(--accent)"></span>インプット</span><span><span class="dot" style="background:var(--good)"></span>アウトプット</span></div>
+    </div>
+    <div class="panel"><h2>記録の手動入力 / 修正</h2>
+      <label>日付</label><input type="date" id="mDate">
+      <div class="row">
+        <div><label>インプット(分)</label><input type="number" id="mListen" min="0"></div>
+        <div><label>アウトプット(分)</label><input type="number" id="mSpeak" min="0"></div>
+        <div><label>SRS(枚)</label><input type="number" id="mSrs" min="0"></div>
+      </div>
+      <div class="row">
+        <div><label>OET紹介状(通)</label><input type="number" id="mLetter" min="0"></div>
+        <div><label>wpm(任意)</label><input type="number" id="mWpm" min="0"></div>
+        <div><label>filler%(任意)</label><input type="number" id="mFiller" min="0"></div>
+      </div>
+      <label>メモ</label><textarea id="mNote" style="min-height:60px"></textarea>
+      <div class="btns"><button onclick="saveManual()">保存 / 上書き</button></div>
+    </div>
+    <div class="panel"><h2>ログ</h2>
+      <table id="log"><thead><tr><th>日付</th><th>IN</th><th>OUT</th><th>SRS</th><th>letter</th><th>wpm</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- ===== PLAN ===== -->
+  <section class="view" id="v-plan">
+    <div class="panel">
+      <h2>4年ロードマップ（学習の焦点）</h2>
+      <table>
+        <tr><th>年</th><th>英語</th><th>試験/資格</th></tr>
+        <tr><td>Y1 土台</td><td>診断→リスニング/発音/シャドーイングで底上げ・SRS開始</td><td>—</td></tr>
+        <tr><td>Y2 試験力</td><td>OET 4技能の本格対策・模試でC1感覚</td><td>MCCQE Part I 学習開始</td></tr>
+        <tr><td>Y3 突破</td><td>OET-Medicine <b>B取得</b>・臨床ロールプレイを厚く</td><td>MCCQE合格・CELPIP受験・<b>フェロー出願</b></td></tr>
+        <tr><td>Y4 渡航</td><td>C1の即応性を実戦化・OR/ICU反復</td><td>スコア有効期限を出願に合わせ管理</td></tr>
+      </table>
+      <div class="mut" style="margin-top:8px">ゴール：登録要件＝OET各B / IELTS各7.0（C1相当）。本筋はOET-Medicine（勉強がそのまま臨床訓練）。</div>
+    </div>
+    <div class="panel">
+      <h2>週間スケジュール（このアプリが自動で出します）</h2>
+      <table id="weekTbl"></table>
+      <div class="mut" style="margin-top:8px">3軸の原則：毎日 ①インプット(聴く) ②アウトプット(話す/書く) ③SRS(覚える) を短くても触る＝連続日数を切らさない。</div>
+    </div>
+    <div class="panel">
+      <h2>Phase 0 診断（最初に1回・現在地の測定）</h2>
+      <div class="mut">今の英語力を実測してプランを補正。下に結果を入れて保存。</div>
+      <details><summary>診断のやり方（約90分・分割可）</summary>
+        <div class="big" style="margin-top:8px">
+          <b>Writing</b>：計画タブ下の課題で紹介状を25分で書く→「採点」ボタンのプロンプトでAIに採点させA–E。<br>
+          <b>Speaking</b>：今日タブのロールプレイ①を録音→ルーブリックで採点。wpm＝音読150語÷秒×60。<br>
+          <b>Listening</b>：英語の麻酔講義を字幕オフで5分→理解率%。<br>
+          <b>Reading</b>：英語論文Abstract1本を辞書なし時間計測。
+        </div>
+      </details>
+      <div class="row">
+        <div><label>Listening 理解%</label><input type="number" id="bL" min="0" max="100"></div>
+        <div><label>Writing band(A-E)</label><input type="text" id="bW" maxlength="2"></div>
+      </div>
+      <div class="row">
+        <div><label>Speaking band(A-E)</label><input type="text" id="bS" maxlength="2"></div>
+        <div><label>基準wpm</label><input type="number" id="bWpm" min="0"></div>
+      </div>
+      <div class="btns"><button onclick="saveBaseline()">ベースラインを保存</button></div>
+      <div id="baseShow" class="mut" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section class="view" id="v-settings">
+    <div class="panel">
+      <h2>クラウド同期（Mac2台＋iPhoneで共有）</h2>
+      <div class="mut">麻酔科専門医アプリと同じ <b>DB URL</b> と <b>同期コード</b> を各端末で入力すれば、進捗が自動で揃います（データは英語アプリ用に分けて保存）。</div>
+      <label>Firebase Database URL</label>
+      <input type="text" id="syncUrl" placeholder="https://〇〇-default-rtdb.firebaseio.com">
+      <label>同期コード（全端末で同じ文字列）</label>
+      <input type="text" id="syncCode" placeholder="例: nobu-eng-2026">
+      <div class="btns">
+        <button onclick="saveSync()">保存して同期を有効化</button>
+        <button class="ghost" onclick="cloudSync(false)">今すぐ同期</button>
+      </div>
+      <div id="syncMsg" class="mut" style="margin-top:8px"></div>
+    </div>
+    <div class="panel">
+      <h2>バックアップ</h2>
+      <div class="btns">
+        <button class="ghost" onclick="exportJSON()">Export (JSON)</button>
+        <button class="ghost" onclick="document.getElementById('imp').click()">Import</button>
+        <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(event)">
+      </div>
+    </div>
+    <div class="panel">
+      <h2>設定</h2>
+      <label>1日に出す新規SRSカード上限</label>
+      <input type="number" id="dailyNew" min="0" max="40" onchange="setDailyNew(this.value)">
+      <div class="mut" style="margin-top:10px">バージョン 1.0 ・ データはこの端末＋（設定時）あなたのFirebaseに保存。</div>
+    </div>
+  </section>
+</div>
+
+<nav class="nav">
+  <a id="n-today" class="on" onclick="go('today')"><span class="ic">📅</span>今日</a>
+  <a id="n-srs" onclick="go('srs')"><span class="ic">🗂️</span>復習</a>
+  <a id="n-stats" onclick="go('stats')"><span class="ic">📈</span>記録</a>
+  <a id="n-plan" onclick="go('plan')"><span class="ic">🗺️</span>計画</a>
+  <a id="n-settings" onclick="go('settings')"><span class="ic">⚙️</span>設定</a>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script src="deck.js"></script>
+<script src="content.js"></script>
+<script src="app.js"></script>
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
