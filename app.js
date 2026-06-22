@@ -269,7 +269,18 @@ function renderSrsHome(){ const due=dueIds().length, nw=newRemaining(), learned=
 
 // ===== STATS =====
 function sumLast(field,days){ let t=0,cur=new Date(todayISO()); for(let i=0;i<days;i++){const k=cur.toLocaleDateString("en-CA"); if(S.days[k])t+=(S.days[k][field]||0); cur.setDate(cur.getDate()-1);} return t; }
-function streak(){ let s=0,cur=new Date(todayISO()); for(;;){ const k=cur.toLocaleDateString("en-CA"); const e=S.days[k]; if(e&&((e.listen||0)+(e.speak||0)+(e.srs||0))>0){s++;cur.setDate(cur.getDate()-1);} else break; } return s; }
+function activeKey(k){ return actDay(S.days[k]); }
+function prevKey(day){ const p=new Date(day); p.setDate(p.getDate()-1); return p.toLocaleDateString("en-CA"); }
+function streakInfo(){ let day=new Date(todayISO());
+  if(!activeKey(day.toLocaleDateString("en-CA"))) day.setDate(day.getDate()-1); // 今日未達でも“継続中”扱い（日が終わるまで0にしない）
+  let count=0, walked=0, lastSkip=-999;
+  for(;;){ const k=day.toLocaleDateString("en-CA");
+    if(activeKey(k)){ count++; walked++; day.setDate(day.getDate()-1); continue; }
+    // 週1の予備日：アクティブ日に挟まれたギャップだけ、直近7歩で未使用なら吸収
+    if(count>0 && (walked-lastSkip)>=7 && activeKey(prevKey(day))){ lastSkip=walked; walked++; day.setDate(day.getDate()-1); continue; }
+    break; }
+  return {count, gracesLeft:(walked-lastSkip)>=7?1:0}; }
+function streak(){ return streakInfo().count; }
 function renderHeader(){ const dl=$("todayLabel"); const dt=new Date(); dl.textContent=`${todayISO()}（${WD[dt.getDay()]}）— 今日のメニューを上から順に。`;
   const wkMin=sumLast("listen",7)+sumLast("speak",7);
   $("gstats").innerHTML=g("🔥 "+streak(),"連続日数")+g(wkMin,"今週の分")+g(sumLast("srs",7),"今週SRS")+g(sumLast("letter",7),"今週letter");
@@ -283,6 +294,7 @@ function renderStats(){ renderHeader();
   $("kpi").innerHTML=`<table>
     <tr><th>指標</th><th>今</th><th>目標</th></tr>
     <tr><td>連続学習日数</td><td>${streak()}日</td><td>切らさない</td></tr>
+    <tr><td>予備日（週1・継続保護）</td><td>残り ${streakInfo().gracesLeft}</td><td>1日空けてもOK</td></tr>
     <tr><td>週の学習量</td><td class="${wkMin>=200?'ok':'lo'}">${wkMin}分</td><td>200分+</td></tr>
     <tr><td>週のOET紹介状</td><td class="${letters>=2?'ok':'lo'}">${letters}通</td><td>2通</td></tr>
     <tr><td>平均発話速度</td><td>${avgWpm} wpm</td><td>130+</td></tr>
@@ -295,10 +307,24 @@ function renderStats(){ renderHeader();
   // log
   const rows=Object.keys(S.days).sort().reverse().slice(0,21).map(k=>{const x=S.days[k];return `<tr><td>${k}</td><td>${x.listen||0}</td><td>${x.speak||0}</td><td>${x.srs||0}</td><td>${x.letter||0}</td><td>${x.wpm??"—"}</td></tr>`;}).join("");
   document.querySelector("#log tbody").innerHTML=rows||`<tr><td colspan="6" class="mut">まだ記録がありません</td></tr>`;
+  renderHeatmap();
   // manual form
   if(!$("mDate").value)$("mDate").value=todayISO();
   loadManual();
 }
+function renderHeatmap(){ const el=$("heatmap"); if(!el)return;
+  const today=new Date(todayISO()); const N=91; const days=[];
+  for(let i=N-1;i>=0;i--){ const d=new Date(today); d.setDate(d.getDate()-i); days.push(d); }
+  const pad=days[0].getDay(); const arr=[]; for(let i=0;i<pad;i++)arr.push(null); days.forEach(d=>arr.push(d));
+  let html="";
+  for(let c=0;c<arr.length;c+=7){ html+='<div class="hmcol">';
+    for(let r=0;r<7;r++){ const d=arr[c+r];
+      if(!d){ html+='<div class="hmcell empty"></div>'; continue; }
+      const k=d.toLocaleDateString("en-CA"); const x=S.days[k]||{}; const m=(x.listen||0)+(x.speak||0);
+      const lv=m===0?0:m<15?1:m<30?2:m<60?3:4;
+      html+=`<div class="hmcell l${lv}" title="${k}: ${m}分"></div>`; }
+    html+="</div>"; }
+  el.innerHTML=html; }
 $("mDate")?.addEventListener?.("change",loadManual);
 function loadManual(){ const d=S.days[$("mDate").value]||{}; $("mListen").value=d.listen??"";$("mSpeak").value=d.speak??"";$("mSrs").value=d.srs??"";$("mLetter").value=d.letter??"";$("mWpm").value=d.wpm??"";$("mFiller").value=d.filler??"";$("mNote").value=d.note??""; }
 function saveManual(){ const k=$("mDate").value||todayISO(); const d=ensureDay(k);

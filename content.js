@@ -64,6 +64,27 @@ You are in pain and anxious, worried about a needle in your back and about not b
 I am the anesthesiologist counselling and consenting you. Ask realistic questions
 ("Will it stop me pushing?", "Could it paralyse me?", "How long does it take?").
 Stay in character until "END", then score clarity, risk communication, empathy, and consent quality.` },
+  { id:10, title:"小児の術前（保護者対応）", prompt:
+`Role-play: You are the parent of a 5-year-old child scheduled for grommet insertion (ear tubes) under GA.
+You are anxious about your child going to sleep and about whether you can stay with them.
+I am the anesthesiologist. Ask realistic parent questions ("Can I come in with them?", "Will it hurt?",
+"Is it safe for someone so young?"). Stay in character until "END", then score me on rapport with an
+anxious parent, plain-language explanation, and reassurance without over-promising.` },
+  { id:11, title:"脊髄くも膜下麻酔の同意 (Spinal consent)", prompt:
+`Role-play: I am the anesthesiologist; you are a 70-year-old having a spinal anaesthetic for a prostate operation.
+You are nervous about being awake and about "a needle in the spine". Ask pointed questions
+("Will I feel the operation?", "Could it damage my nerves?", "What if it doesn't work?").
+Stay in character until "END", then score clarity, risk communication, empathy and consent quality.` },
+  { id:12, title:"ICU家族への状況説明 (Family update)", prompt:
+`Role-play: You are the spouse of a patient who is intubated and sedated in ICU after major surgery.
+You are frightened and want to know "Is he going to be okay?". I am the doctor giving an honest update.
+React emotionally; push me to avoid jargon and to be honest about uncertainty.
+Stay in character until "END", then assess empathy, honesty about prognosis/uncertainty, structure, and jargon.` },
+  { id:13, title:"緊急帝王切開の同意 (Urgent caesarean)", prompt:
+`Role-play: You are a labouring woman who needs an urgent caesarean for fetal distress, under time pressure.
+I am the anesthesiologist quickly explaining options (topping up your epidural vs a spinal vs, rarely, a general)
+and consenting you. You are frightened and ask "Will my baby be okay?" and "Will I be awake?".
+Stay in character until "END", then score calm clarity under time pressure, prioritisation, empathy, and consent.` },
   { id:9, title:"雑談 / チーム対人 (Small talk)", prompt:
 `You are a Canadian OR nurse I work with daily. Run 5 minutes of realistic between-cases small talk
 (weather, hockey, the weekend, a tricky case). Keep me talking, then score how natural my small talk was
@@ -143,6 +164,23 @@ Course:    Mobilised day 0; tolerating diet; pain controlled on oral analgesia; 
 Meds:      Discharge on paracetamol + a short NSAID course; resume metformin and amlodipine.
 Follow-up: Remove dressings day 7; surgical review in 4 weeks.
 Action:    GP to recheck blood pressure (was 150/92 pre-operatively) and review diabetic control.
-Task:      Write a brief discharge letter to the GP summarising the admission and the actions needed.` }
+Task:      Write a brief discharge letter to the GP summarising the admission and the actions needed.` },
+  { title:"術前評価 → ペインクリニック（オピオイド常用）", task:"ペイン外来への紹介状（180–200語）。慢性疼痛・オピオイド耐性患者の周術期鎮痛計画を依頼。", notes:
+`Patient:   Mr Ren Takahashi, 52, male. Warehouse worker.
+Planned:   Elective lumbar spinal fusion, in ~4 weeks.
+PMH:       Chronic low back pain (8 years). Depression (on an SSRI).
+Meds:      Long-term modified-release oxycodone twice daily plus PRN doses; gabapentin.
+Issue:     Established opioid tolerance → standard post-op analgesia likely to be inadequate.
+Exam:      Otherwise well; no red-flag neurology.
+Plan:      Request pain-team review for a peri-operative analgesia plan (opioid-sparing/multimodal,
+           realistic expectations given tolerance, and a post-op weaning plan).` },
+  { title:"術前評価 → 呼吸器（重症COPD）", task:"呼吸器内科への紹介状（180–200語）。待機手術前のCOPD最適化を依頼。", notes:
+`Patient:   Mrs Yuki Nakamura, 69, female.
+Planned:   Elective open ventral hernia repair, in ~3 weeks.
+PMH:       Severe COPD. Current smoker (40 pack-years). Hypertension.
+Symptoms:  Breathless on minimal exertion; productive cough; two exacerbations in the past year.
+Exam:      Reduced air entry with expiratory wheeze. SpO2 93% on room air.
+Plan:      Request respiratory review for optimisation before surgery — inhaler therapy/technique,
+           smoking-cessation support, and advice on fitness for general anaesthesia.` }
 ]
 };

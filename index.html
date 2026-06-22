@@ -108,6 +108,14 @@
   .ladder{font-size:13px} .ladder .step{padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
   .ladder .step.cur{color:var(--good);font-weight:700} .ladder .step.cur::after{content:"← 今ここ";font-size:11px;color:var(--good)}
   .ladder .step.done2{color:var(--muted)}
+  .heatmap{display:flex;gap:3px;overflow-x:auto;padding-bottom:4px}
+  .hmcol{display:flex;flex-direction:column;gap:3px}
+  .hmcell{width:12px;height:12px;border-radius:3px;background:var(--panel2)}
+  .hmcell.l1{background:rgba(62,207,142,.30)} .hmcell.l2{background:rgba(62,207,142,.55)}
+  .hmcell.l3{background:rgba(62,207,142,.80)} .hmcell.l4{background:var(--good)}
+  .hmcell.empty{background:transparent}
+  .hmleg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:8px}
+  .hmleg .hmcell{width:11px;height:11px}
   .card3d{text-align:center}
   .card3d .front{font-size:22px;font-weight:600;margin:24px 8px}
   .card3d .back{font-size:24px;font-weight:700;color:var(--good);margin:8px}
@@ -181,6 +189,10 @@
   <!-- ===== STATS ===== -->
   <section class="view" id="v-stats">
     <div class="panel"><h2>KPI（今週）</h2><div id="kpi"></div></div>
+    <div class="panel"><h2>活動ヒートマップ（直近13週・分）</h2>
+      <div class="heatmap" id="heatmap"></div>
+      <div class="hmleg">少 <span class="hmcell l1"></span><span class="hmcell l2"></span><span class="hmcell l3"></span><span class="hmcell l4"></span> 多</div>
+    </div>
     <div class="panel"><h2>直近14日（聴=青 / 話・書=緑、分）</h2><div class="bar" id="chart"></div>
       <div class="legend"><span><span class="dot" style="background:var(--accent)"></span>インプット</span><span><span class="dot" style="background:var(--good)"></span>アウトプット</span></div>
     </div>
@@ -330,9 +342,9 @@
   </div>
 </div>
 
-<script src="deck.js?v=7"></script>
-<script src="content.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="deck.js?v=8"></script>
+<script src="content.js?v=8"></script>
+<script src="app.js?v=8"></script>
 <script>
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>
