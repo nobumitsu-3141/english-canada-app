@@ -2,8 +2,8 @@
    content (html/js): network-first (更新が即反映、オフラインはキャッシュ)
    assets (svg/png) : cache-first
    cross-origin (Firebase同期): 触らない */
-const CACHE = "engca-cache-v4";
-const CORE = ["./","index.html","app.js?v=6","content.js?v=6","deck.js?v=6","manifest.webmanifest","icon.svg","icon-192.png","icon-512.png"];
+const CACHE = "engca-cache-v5";
+const CORE = ["./","index.html","app.js?v=7","content.js?v=7","deck.js?v=7","manifest.webmanifest","icon.svg","icon-192.png","icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE).catch(()=>{})).then(()=>self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
 self.addEventListener("fetch", e => {

@@ -323,7 +323,7 @@ function saveBaseline(){ S.meta.baseline={date:todayISO(),L:$("bL").value===""?n
 
 // ===== SETTINGS =====
 function renderSettings(){ $("syncUrl").value=S.sync.url||""; $("syncCode").value=S.sync.code||""; $("dailyNew").value=S.meta.dailyNew||8;
-  if($("avatarStyle"))$("avatarStyle").value=S.meta.avatarStyle||"career";
+  if($("avatarStyle"))$("avatarStyle").value=S.meta.avatarStyle==="career"?"career":"animal";
   const ep=endpoint(); $("syncMsg").innerHTML = ep ? ("有効：最終同期 "+(S.sync.lastSync?new Date(S.sync.lastSync).toLocaleString():"なし")) : "未設定（URLと同期コードを入力）";
   const bk=$("backupMsg"); if(bk){ const le=S.meta.lastExport; bk.textContent = le ? ("最終エクスポート: "+le) : "まだエクスポートしていません（クラウド同期があれば必須ではありません）"; } }
 function saveSync(){ S.sync.url=$("syncUrl").value.trim(); S.sync.code=$("syncCode").value.trim(); save(); renderSettings(); if(endpoint()){toast("同期を有効化");cloudSync(false);}else toast("URLとコードを入れてください"); }
@@ -389,6 +389,11 @@ document.addEventListener("keydown",e=>{
 function maybeWelcome(){ if(localStorage.getItem("engca_seen"))return;
   const o=$("welcome"); if(o){ o.style.display="flex"; } }
 function closeWelcome(goSync){ localStorage.setItem("engca_seen","1"); const o=$("welcome"); if(o)o.style.display="none"; if(goSync)go("settings"); }
+function maybeIosHint(){ const el=$("iosHint"); if(!el)return;
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  const standalone=window.navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
+  if(isIOS && !standalone && !localStorage.getItem("engca_ios")) el.style.display="flex"; }
+function dismissIos(){ localStorage.setItem("engca_ios","1"); const el=$("iosHint"); if(el)el.style.display="none"; }
 
 // ===== キャラクター育成（XP/レベル/称号/実績 — すべて記録から算出） =====
 const STAGES=[
@@ -412,7 +417,7 @@ const ANIMALS=[
   {min:29, ja:"クマ",           en:"", av:"🐻"},
   {min:37, ja:"カナダの主",     en:"", av:"🍁"},
 ];
-function stageSet(){ return S.meta.avatarStyle==="animal" ? ANIMALS : STAGES; }
+function stageSet(){ return S.meta.avatarStyle==="career" ? STAGES : ANIMALS; } // 既定は動物マスコット版
 function threeAxis(d){ return (d.listen||0)>0 && ((d.speak||0)>0||(d.letter||0)>0) && (d.srs||0)>0; }
 function xpOfDay(d){ return (d.listen||0)+(d.speak||0)+(d.srs||0)*2+(d.letter||0)*40+(threeAxis(d)?20:0); }
 function totalXP(){ return Object.values(S.days).reduce((a,d)=>a+xpOfDay(d),0); }
@@ -443,16 +448,24 @@ function achievements(){ const a=agg(); return [
   {ic:"📚",nm:"全カテゴリ制覇",cur:a.catCount,tg:a.allCats},
   {ic:"🎯",nm:"週 200分達成",cur:a.bestWeek,tg:200},
 ]; }
+function nextBadge(){ const lock=achievements().filter(a=>a.cur<a.tg); if(!lock.length)return null;
+  return lock.sort((a,b)=>(b.cur/b.tg)-(a.cur/a.tg))[0]; }
 function renderCharCard(){ const xp=totalXP(), li=levelInfo(xp), pct=Math.min(100,Math.round(li.into/li.span*100));
-  const ac=achievements(), unlocked=ac.filter(x=>x.cur>=x.tg).length;
-  $("charCard").innerHTML=`<div class="avatar">${li.stage.av}<span class="lv">Lv${li.lvl}</span></div>
+  const ac=achievements(), unlocked=ac.filter(x=>x.cur>=x.tg).length; const nb=nextBadge();
+  $("charCard").innerHTML=`<div class="avatar" id="charAv">${li.stage.av}<span class="lv">Lv${li.lvl}</span></div>
     <div class="charInfo"><div class="title">${li.stage.ja}</div><div class="mood">${moodLine()}</div>
     <div class="xpbar"><i style="width:${pct}%"></i></div>
-    <div class="xpnum">XP ${xp} ・ 次まで ${li.span-li.into} ・ 実績 ${unlocked}/${ac.length} ・ タップで詳細</div></div>`; }
+    <div class="xpnum">XP ${xp} ・ 次のレベルまで ${li.span-li.into} ・ 実績 ${unlocked}/${ac.length}</div>
+    ${nb?`<div class="xpnum">次の実績：${nb.ic} ${nb.nm}（あと ${nb.tg-nb.cur}）`:`<div class="xpnum">実績コンプリート！🏆`}・ タップで詳細</div></div>`; }
+function popAvatar(){ const a=$("charAv"); if(a){ a.classList.remove("pop"); void a.offsetWidth; a.classList.add("pop"); } }
 function checkLevelUp(){ const li=levelInfo(totalXP()); const raw=localStorage.getItem("engca_lvl");
   if(raw===null){ localStorage.setItem("engca_lvl",li.lvl); return; }
-  if(li.lvl>+raw){ localStorage.setItem("engca_lvl",li.lvl); toast(`🎉 レベルアップ！ Lv${li.lvl} ・ ${li.stage.ja}`); }
-  else if(li.lvl<+raw){ localStorage.setItem("engca_lvl",li.lvl); } }
+  const prev=+raw;
+  if(li.lvl>prev){ localStorage.setItem("engca_lvl",li.lvl);
+    const evolved=stageSet().some(s=>s.min>prev && s.min<=li.lvl);
+    toast(evolved ? `✨ 進化！ ${li.stage.av} ${li.stage.ja} になった！` : `🎉 レベルアップ！ Lv${li.lvl} ・ ${li.stage.ja}`);
+    popAvatar();
+  } else if(li.lvl<prev){ localStorage.setItem("engca_lvl",li.lvl); } }
 function openBuddy(){ renderBuddy(); $("buddyModal").style.display="flex"; }
 function closeBuddy(){ $("buddyModal").style.display="none"; }
 function renderBuddy(){ const xp=totalXP(), li=levelInfo(xp), pct=Math.min(100,Math.round(li.into/li.span*100));
@@ -468,4 +481,5 @@ document.addEventListener("visibilitychange",()=>{ if(!document.hidden && endpoi
 // ===== boot =====
 renderToday();
 maybeWelcome();
+maybeIosHint();
 if(endpoint()) cloudSync(true);

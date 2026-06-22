@@ -96,6 +96,10 @@
   .xpbar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:6px}
   .xpbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--good));border-radius:6px;transition:width .5s}
   .xpnum{font-size:11px;color:var(--muted);margin-top:3px}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+  .avatar.pop{animation:pop .6s ease}
+  .iosHint{background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;font-size:13px;display:none;gap:8px;align-items:center;margin-bottom:12px}
+  .iosHint .x{margin-left:auto;color:var(--muted);cursor:pointer;font-size:18px;flex:0 0 auto}
   .avatar.big{width:96px;height:96px;font-size:52px;margin:0 auto 8px}
   .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:6px}
   .badge{text-align:center;border:1px solid var(--line);border-radius:12px;padding:10px 6px}
@@ -131,6 +135,7 @@
 
   <!-- ===== TODAY ===== -->
   <section class="view on" id="v-today">
+    <div class="iosHint" id="iosHint">📲 ホーム画面に追加するとアプリのように使えます：共有ボタン → 「ホーム画面に追加」<span class="x" onclick="dismissIos()">×</span></div>
     <div class="panel charCard" id="charCard" onclick="openBuddy()"></div>
     <div class="axis" id="axis"></div>
     <div id="tasks"></div>
@@ -325,9 +330,9 @@
   </div>
 </div>
 
-<script src="deck.js?v=6"></script>
-<script src="content.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="deck.js?v=7"></script>
+<script src="content.js?v=7"></script>
+<script src="app.js?v=7"></script>
 <script>
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>
