@@ -323,6 +323,7 @@ function saveBaseline(){ S.meta.baseline={date:todayISO(),L:$("bL").value===""?n
 
 // ===== SETTINGS =====
 function renderSettings(){ $("syncUrl").value=S.sync.url||""; $("syncCode").value=S.sync.code||""; $("dailyNew").value=S.meta.dailyNew||8;
+  if($("avatarStyle"))$("avatarStyle").value=S.meta.avatarStyle||"career";
   const ep=endpoint(); $("syncMsg").innerHTML = ep ? ("有効：最終同期 "+(S.sync.lastSync?new Date(S.sync.lastSync).toLocaleString():"なし")) : "未設定（URLと同期コードを入力）";
   const bk=$("backupMsg"); if(bk){ const le=S.meta.lastExport; bk.textContent = le ? ("最終エクスポート: "+le) : "まだエクスポートしていません（クラウド同期があれば必須ではありません）"; } }
 function saveSync(){ S.sync.url=$("syncUrl").value.trim(); S.sync.code=$("syncCode").value.trim(); save(); renderSettings(); if(endpoint()){toast("同期を有効化");cloudSync(false);}else toast("URLとコードを入れてください"); }
@@ -400,12 +401,24 @@ const STAGES=[
   {min:29, ja:"准教授",             en:"Assistant Professor",  av:"👨‍🏫"},
   {min:37, ja:"FRCPC / 教授",       en:"Professor",            av:"🎓"},
 ];
+// 動物マスコット版（同じレベル境界で進化）
+const ANIMALS=[
+  {min:1,  ja:"たまご",         en:"", av:"🥚"},
+  {min:4,  ja:"ひな",           en:"", av:"🐣"},
+  {min:7,  ja:"ビーバー",       en:"", av:"🦫"},
+  {min:11, ja:"キツネ",         en:"", av:"🦊"},
+  {min:16, ja:"シカ",           en:"", av:"🦌"},
+  {min:22, ja:"ムース",         en:"", av:"🫎"},
+  {min:29, ja:"クマ",           en:"", av:"🐻"},
+  {min:37, ja:"カナダの主",     en:"", av:"🍁"},
+];
+function stageSet(){ return S.meta.avatarStyle==="animal" ? ANIMALS : STAGES; }
 function threeAxis(d){ return (d.listen||0)>0 && ((d.speak||0)>0||(d.letter||0)>0) && (d.srs||0)>0; }
 function xpOfDay(d){ return (d.listen||0)+(d.speak||0)+(d.srs||0)*2+(d.letter||0)*40+(threeAxis(d)?20:0); }
 function totalXP(){ return Object.values(S.days).reduce((a,d)=>a+xpOfDay(d),0); }
 function levelInfo(xp){ let lvl=1, base=0, cost=120; while(xp>=base+cost){ base+=cost; lvl++; cost=80+40*lvl; }
-  let ci=0; for(let i=0;i<STAGES.length;i++){ if(lvl>=STAGES[i].min)ci=i; }
-  return {lvl, into:xp-base, span:cost, stage:STAGES[ci], ci}; }
+  const set=stageSet(); let ci=0; for(let i=0;i<set.length;i++){ if(lvl>=set[i].min)ci=i; }
+  return {lvl, into:xp-base, span:cost, stage:set[ci], ci, set}; }
 function actDay(x){ return x&&((x.listen||0)+(x.speak||0)+(x.srs||0))>0; }
 function moodLine(){ const t=todayISO(); if(actDay(S.days[t]))return "絶好調！今日も積み上げ中 🔥";
   if(actDay(S.days[addDays(t,-1)]))return "連続記録キープ中。今日もどれか1つ 🙂"; return "ひさしぶり！軽く1つから 💪"; }
@@ -446,7 +459,8 @@ function renderBuddy(){ const xp=totalXP(), li=levelInfo(xp), pct=Math.min(100,M
   $("bAvatar").textContent=li.stage.av; $("bTitle").textContent=`Lv${li.lvl} ${li.stage.ja}`; $("bSub").textContent=li.stage.en;
   $("bXp").style.width=pct+"%"; $("bXpNum").textContent=`XP ${xp} ・ 次のレベルまで ${li.span-li.into}`;
   $("bBadges").innerHTML=achievements().map(a=>{ const done=a.cur>=a.tg; return `<div class="badge ${done?'':'lock'}"><div class="bi">${done?a.ic:'🔒'}</div><div class="bn">${a.nm}</div><div class="bp">${Math.min(a.cur,a.tg)}/${a.tg}</div></div>`; }).join("");
-  $("bLadder").innerHTML=STAGES.map((s,i)=>`<div class="step ${i===li.ci?'cur':''} ${i<li.ci?'done2':''}"><span>${s.av}</span><span>Lv${s.min}〜 ${s.ja}（${s.en}）</span></div>`).join(""); }
+  $("bLadder").innerHTML=li.set.map((s,i)=>`<div class="step ${i===li.ci?'cur':''} ${i<li.ci?'done2':''}"><span>${s.av}</span><span>Lv${s.min}〜 ${s.ja}${s.en?"（"+s.en+"）":""}</span></div>`).join(""); }
+function setAvatarStyle(v){ S.meta.avatarStyle=v; save(); if(view==="today")renderToday(); toast(v==="animal"?"マスコット版にしました":"キャリア版にしました"); }
 
 // ===== アプリ復帰時に最新へ自動同期（端末をまたいだ鮮度確保） =====
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden && endpoint()){ cloudSync(true).then(()=>{ if(view==="today")renderToday(); }); } });

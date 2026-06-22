@@ -271,6 +271,11 @@
     </div>
     <div class="panel">
       <h2>設定</h2>
+      <label>相棒のキャラクター</label>
+      <select id="avatarStyle" onchange="setAvatarStyle(this.value)">
+        <option value="career">キャリア昇格版（医学生→研修医→…→教授）</option>
+        <option value="animal">カナダ動物マスコット版（たまご→…→カナダの主🍁）</option>
+      </select>
       <label>1日に出す新規SRSカード上限</label>
       <input type="number" id="dailyNew" min="0" max="40" onchange="setDailyNew(this.value)">
       <div class="mut" style="margin-top:10px">バージョン 1.0 ・ データはこの端末＋（設定時）あなたのFirebaseに保存。</div>
@@ -320,9 +325,9 @@
   </div>
 </div>
 
-<script src="deck.js?v=5"></script>
-<script src="content.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="deck.js?v=6"></script>
+<script src="content.js?v=6"></script>
+<script src="app.js?v=6"></script>
 <script>
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>
