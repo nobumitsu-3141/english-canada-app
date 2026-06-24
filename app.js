@@ -7,6 +7,7 @@ const WD = ["日","月","火","水","木","金","土"];
 
 const DECK = window.DECK || {cards:[],meta:{categories:{}}};
 const C = window.CONTENT;
+const WPM_WORDS = (C && C.wpmPassage) ? C.wpmPassage.trim().split(/\s+/).length : 150; // 音読パッセージの実語数（≈160）
 
 // 週間スケジュール（曜日 0=日 .. 6=土）
 const SCHED = {
@@ -148,13 +149,13 @@ function roleUI(t){
 // 音読wpm自動計測（150語を音読→停止で語/分を算出）
 let wpmT={sec:0,h:null};
 function wpmWidget(targetId){ return `<div class="panel" style="background:var(--panel2);margin:8px 0">
-    <div class="mut">音読でwpm自動計測：開始 → 下の150語を音読 → 停止で算出。</div>
+    <div class="mut">音読でwpm自動計測：開始 → 下の${WPM_WORDS}語を音読 → 停止で算出。</div>
     <div class="pre" style="max-height:110px;overflow:auto">${esc(C.wpmPassage)}</div>
     <div class="timer" id="wpmDisp">00:00</div>
     <div class="btns"><button onclick="wpmStart()">▶ 開始</button><button class="warn" onclick="wpmStop('${targetId}')">■ 停止して算出</button></div>
   </div>`; }
 function wpmStart(){ if(wpmT.h)clearInterval(wpmT.h); wpmT={sec:0,h:setInterval(()=>{wpmT.sec++;const e=$("wpmDisp");if(e)e.textContent=fmt(wpmT.sec);},1000)}; const e=$("wpmDisp");if(e)e.textContent="00:00"; toast("音読開始"); }
-function wpmStop(targetId){ if(!wpmT.h)return; clearInterval(wpmT.h); const sec=wpmT.sec; wpmT={sec:0,h:null}; if(sec<3){toast("短すぎます");return;} const wpm=Math.round(150/sec*60); const inp=$(targetId); if(inp)inp.value=wpm; toast("wpm = "+wpm+"（記入しました）"); }
+function wpmStop(targetId){ if(!wpmT.h)return; clearInterval(wpmT.h); const sec=wpmT.sec; wpmT={sec:0,h:null}; if(sec<3){toast("短すぎます");return;} const wpm=Math.round(WPM_WORDS/sec*60); const inp=$(targetId); if(inp){inp.value=wpm; inp.dispatchEvent(new Event("input"));} toast("wpm = "+wpm+"（記入しました）"); }
 function finishRole(id,defMin){ const m=+($("min_"+id).value||defMin); const w=$("wpm_"+id).value, f=$("fil_"+id).value;
   logTask(id,{speak:m, note:$("note_"+id).value||undefined, wpm:w===""?undefined:+w, filler:f===""?undefined:+f});
   toast("+"+m+"分 記録しました"); renderToday(); }
@@ -163,7 +164,7 @@ function finishRole(id,defMin){ const m=+($("min_"+id).value||defMin); const w=$
 function pronUI(t){ return `<p class="big"><b>発音・流暢性 / または OETリスニング</b></p>
   <p class="mut">録音→文字起こしを下のプロンプトに貼ってAIに診断させる。リスニング日にしてもOK。</p>
   <div class="btns"><button onclick='copyText(${jstr(C.pron)})'>📋 発音診断プロンプトをコピー</button>
-    <button class="ghost" onclick='copyText(${jstr(C.wpmPassage)})'>📋 音読パッセージ(150語)</button></div>
+    <button class="ghost" onclick='copyText(${jstr(C.wpmPassage)})'>📋 音読パッセージ(${WPM_WORDS}語)</button></div>
   <label>かけた時間(分)</label>
   <div class="row"><input type="number" id="man_${t.id}" min="0" placeholder="${t.min}"><button onclick="manLog('${t.id}','speak')">記録</button></div>`;
 }
@@ -335,8 +336,12 @@ function saveManual(){ const k=$("mDate").value||todayISO(); const d=ensureDay(k
 // ===== PLAN =====
 function renderPlan(){ $("weekTbl").innerHTML="<tr><th>曜</th><th>メニュー</th></tr>"+
   [1,2,3,4,5,6,0].map(w=>`<tr><td>${WD[w]}</td><td>${SCHED[w].map(t=>t.nm).join(" ／ ")}</td></tr>`).join("");
-  const b=S.meta.baseline; $("baseShow").innerHTML = b ? `保存済みベースライン（${b.date}）：Listening ${b.L??"—"}% ・ Writing ${b.W||"—"} ・ Speaking ${b.S||"—"} ・ wpm ${b.wpm??"—"}` : "まだ未測定。診断したら上に入力して保存。";
-  if(b){ $("bL").value=b.L??"";$("bW").value=b.W||"";$("bS").value=b.S||"";$("bWpm").value=b.wpm??""; }
+  const b=S.meta.baseline;
+  if(b){ let html=`保存済みベースライン（${b.date}）：Listening ${b.L??"—"}% ・ Writing ${b.W||"—"} ・ Speaking ${b.S||"—"} ・ wpm ${b.wpm??"—"}`;
+    if(b.label){ html+=`<div style="margin-top:8px;color:var(--ink)"><b>現在地（律速）：${b.label}</b>（最弱 ${b.weakest||"—"}）</div>`+(b.rules||[]).map(r=>`<div class="p0rule">▶ ${r}</div>`).join(""); }
+    $("baseShow").innerHTML=html;
+    $("bL").value=b.L??"";$("bW").value=b.W||"";$("bS").value=b.S||"";$("bWpm").value=b.wpm??"";
+  } else $("baseShow").innerHTML="まだ未測定。「▶ ガイド付き診断を始める」から。";
   renderReview();
 }
 const REVIEW_ITEMS=["フル模試 or セクション模試を1回やった","スコア/wpm/フィラーを記録し前月比を確認","ロールプレイ採点で繰り返し出た弱点→新カード追加","OETレターのバンドが上がっているか","業績：今月の投稿/発表/教育を1つ進めた","(Y3以降) フェロー先・締切・必要書類の進捗"];
@@ -345,7 +350,104 @@ function renderReview(){ const el=$("reviewList"); if(!el)return; const m=curMon
   $("reviewMonth").textContent=m;
   el.innerHTML=REVIEW_ITEMS.map((t,i)=>`<label style="display:flex;gap:8px;align-items:flex-start;color:var(--ink);margin:6px 0"><input type="checkbox" style="width:auto;margin-top:3px" ${chk[i]?"checked":""} onchange="toggleReview(${i},this.checked)"> <span>${t}</span></label>`).join(""); }
 function toggleReview(i,v){ const m=curMonth(); S.meta.review=S.meta.review||{}; const a=S.meta.review[m]||(S.meta.review[m]=[]); a[i]=v; save(); scheduleSync(); }
-function saveBaseline(){ S.meta.baseline={date:todayISO(),L:$("bL").value===""?null:+$("bL").value,W:$("bW").value.toUpperCase(),S:$("bS").value.toUpperCase(),wpm:$("bWpm").value===""?null:+$("bWpm").value}; save(); scheduleSync(); renderPlan(); toast("ベースラインを保存しました"); }
+function saveBaseline(){ const b={date:todayISO(),L:$("bL").value===""?null:+$("bL").value,W:$("bW").value.toUpperCase(),S:$("bS").value.toUpperCase(),wpm:$("bWpm").value===""?null:+$("bWpm").value};
+  const a=assessBaseline(b); if(a){ b.weakest=a.weakest; b.label=a.label; b.rules=a.rules; }
+  S.meta.baseline=b; save(); scheduleSync(); renderPlan(); toast("ベースラインを保存しました"); }
+
+// ===== PHASE 0 — ガイド付き診断（モーダル） =====
+const P0_CANDO={
+ Listening:["医療系の講義/ポッドキャストを字幕なしで7割以上理解できる","カナダ英語の早口・なまり・口語の患者を1回で聞き取れる","電話越し（音質低下）でも要点を取り違えない","数字・薬剤名・否定/条件(unless等)を聞き逃さない"],
+ Reading:["論文のAbstract〜結論を辞書なしで読み通せる","ガイドライン本文を実用速度で読める","同意書・行政文書の固い言い回しを誤解しない","知らない語を文脈で推測して止まらず読める"],
+ Speaking:["術前面談を、言い直しはあっても最後まで自力で回せる","リスク説明を平易な言葉に言い換えできる","詰まっても沈黙でなくつなぎ語で繋げる","雑談を相手のテンポで返せる"],
+ Writing:["紹介状を構成立てて20分で書ける","受動態・時制・冠詞のミスが「ときどき」程度","定型表現(I am writing to refer…)が手に馴染む","箇条書きでなく自然な文章で要約できる"]
+};
+let p0={cando:{}};
+function assessBaseline(o){
+  const gl=g=>({A:4,B:3,"C+":2,C:2,D:1,E:1})[(g||"").toUpperCase()]||null;
+  const ll=p=>{ p=+p; if(!p)return null; if(p<55)return 1; if(p<79)return 2; return 3; };
+  const skills={Listening:ll(o.L), Reading:o.reading?+o.reading:null, Writing:gl(o.W), Speaking:gl(o.S)};
+  const have=Object.values(skills).filter(x=>x!=null); if(have.length<2)return null;
+  const min=Math.min(...have);
+  const weakest=Object.entries(skills).filter(([,x])=>x===min).map(([k])=>k).join("・");
+  const LAB={1:"B1以下 (OET D / IELTS ~5)",2:"B2 (OET C / IELTS ~6)",3:"B2–C1 (OET B圏 / IELTS ~7)",4:"C1+ (OET A圏 / IELTS 7.5+)"};
+  const rules=[];
+  if(min===1)rules.push("最弱が <b>B1以下</b> → Y1前半は Listening×シャドーイング＋発音 に寄せる。OET戦略は底上げ後。SRSは毎日固定。");
+  else if(min===2)rules.push("全体が <b>B1〜B2（C/C+圏）</b> → Y1後半から OET 4技能の型に着手。Writing週2・Speaking週3を主軸。");
+  else rules.push("<b>B2〜C1（B圏が見える）</b> → 試験対策を前倒し。模試を月1に、Y2前半でのOET-B受験を射程に。MCCQE Part I も前倒し可。");
+  if(o.wpm&&+o.wpm<110)rules.push("wpm &lt; 110 → 流暢性ドリル（音読・シャドーイング）を毎日固定。130+ が自然域の目標。");
+  if(o.filler&&+o.filler>=8)rules.push("フィラー率が高い → つなぎ語の置換（um→ポーズ＋so,/right,）を1か月の重点に。");
+  return {min,weakest,label:LAB[min],rules};
+}
+function p0Sub(skill){ const o=p0.cando[skill]||{}; return (o[0]||0)+(o[1]||0)+(o[2]||0)+(o[3]||0); }
+function openPhase0(){
+  const b=S.meta.baseline||{}; p0={cando:(b.p0&&b.p0.cando)||{}, L:b.L??null, W:b.W||"", S:b.S||"", wpm:b.wpm??null, filler:b.filler??null, reading:b.reading?String(b.reading):"", cefr:b.cefr||"", lcause:b.lcause||""};
+  buildP0(); $("phase0Modal").style.display="flex"; computeP0();
+}
+function closePhase0(){ $("phase0Modal").style.display="none"; }
+function p0grade(key,val,btn){ p0[key]=val; btn.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===btn)); computeP0(); }
+function p0cando(skill,i,val,btn){ p0.cando[skill]=p0.cando[skill]||{}; p0.cando[skill][i]=val; btn.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===btn)); computeP0(); }
+function p0in(key,el){ p0[key]= el.value===""?(key==="reading"||key==="cefr"||key==="lcause"?"":null):(el.type==="number"?+el.value:el.value); computeP0(); }
+function gbtns(key){ return `<div class="p0g">`+["A","B","C+","C","D","E"].map(g=>`<button class="${p0[key]===g?'on':''}" onclick="p0grade('${key}','${g}',this)">${g}</button>`).join("")+`</div>`; }
+function buildP0(){
+  let h="";
+  // Step 1
+  h+=`<div class="p0step"><b>1. 自己申告 can-do（5分）</b><div class="mut">余裕=2 / 何とか=1 / 無理=0（目安。実測=Step2–5が本データ）</div>`;
+  Object.entries(P0_CANDO).forEach(([skill,qs])=>{
+    h+=`<div style="font-weight:700;color:var(--accent);font-size:13px;margin:10px 0 2px">${skill}</div>`;
+    qs.forEach((q,i)=>{ const cur=(p0.cando[skill]||{})[i];
+      h+=`<div class="p0q"><span>${q}</span><span class="p0opts">`+[0,1,2].map(v=>`<button class="${cur===v?'on':''}" onclick="p0cando('${skill}',${i},${v},this)">${v}</button>`).join("")+`</span></div>`; });
+    h+=`<div class="mut" id="p0sub_${skill}" style="text-align:right"></div>`;
+  });
+  h+=`</div>`;
+  // Step 2 Writing
+  const Lt=C.letters[0];
+  h+=`<div class="p0step"><b>2. Writing（25分）— OET紹介状</b>
+    <div class="mut">タイマー25分で下の症例だけを根拠に紹介状(180–200語)→採点プロンプトをAIへ貼って A–E を採点。</div>
+    <details><summary>${esc(Lt.title)}（症例ノート）</summary><div class="pre">${esc(Lt.notes)}</div></details>
+    <div class="btns"><button class="ghost" onclick='copyText(${jstr(C.letterGrader)})'>📋 採点プロンプトをコピー</button></div>
+    <label>採点結果（総合 A–E）</label>${gbtns("W")}</div>`;
+  // Step 3 Speaking
+  const rp=C.roleplays[0];
+  h+=`<div class="p0step"><b>3. Speaking（15分）</b>
+    <div class="mut">①下のロールプレイを録音しながら5分→"END"で採点。②パッセージを音読してwpm自動計測。</div>
+    <div class="btns"><button class="ghost" onclick='copyText(${jstr(rp.prompt+"\n\n"+C.rubric)})'>📋 ロールプレイ①＋ルーブリック</button></div>
+    ${wpmWidget("p0_wpm")}
+    <div class="row">
+      <div><label>CEFR</label><select onchange="p0in('cefr',this)">`+["","A2","B1","B1+","B2","B2+","C1","C1+"].map(o=>`<option ${p0.cefr===o?'selected':''}>${o}</option>`).join("")+`</select></div>
+      <div><label>OET Speaking</label>${gbtns("S")}</div>
+    </div>
+    <div class="row">
+      <div><label>wpm</label><input type="number" id="p0_wpm" min="0" value="${p0.wpm??''}" oninput="p0in('wpm',this)"></div>
+      <div><label>filler %</label><input type="number" min="0" value="${p0.filler??''}" oninput="p0in('filler',this)"></div>
+    </div></div>`;
+  // Step 4 Listening
+  h+=`<div class="p0step"><b>4. Listening（20分）</b>
+    <div class="mut">下のどちらか：①OET無料サンプルListening1セクション→理解率%。②麻酔系音声を字幕オフ5分→字幕オンで答え合わせ。</div>
+    <div class="mut" style="font-size:12px">・OET無料サンプル：oet.com/ready/sample-tests/oet-test-on-paper/medicine<br>・British Council 無料IELTS：takeielts.britishcouncil.org/take-ielts/prepare/free-ielts-english-practice-tests</div>
+    <div class="row">
+      <div><label>字幕なし理解 %</label><input type="number" min="0" max="100" value="${p0.L??''}" oninput="p0in('L',this)"></div>
+      <div><label>取りこぼし主因</label><select onchange="p0in('lcause',this)">`+["","数字・薬剤名","否定・条件","なまり・口語","速度","音質(電話)"].map(o=>`<option ${p0.lcause===o?'selected':''}>${o||"—"}</option>`).join("")+`</select></div>
+    </div></div>`;
+  // Step 5 Reading
+  h+=`<div class="p0step"><b>5. Reading（15分）</b>
+    <div class="mut">英語論文のAbstract1本＋本文1段落を辞書なし・時間計測で読む→日本語3行要約→正誤確認（PubMedで麻酔系1本）。</div>
+    <label>辞書なしの理解</label><select onchange="p0in('reading',this)">`+[["","—"],["3","はい（ほぼ理解）"],["2","おおむね"],["1","つらい"]].map(([v,t])=>`<option value="${v}" ${String(p0.reading)===v?'selected':''}>${t}</option>`).join("")+`</select></div>`;
+  $("p0body").innerHTML=h;
+}
+function computeP0(){
+  Object.keys(P0_CANDO).forEach(s=>{ const el=$("p0sub_"+s); if(el){ const v=p0Sub(s); const band=v<=2?"A2〜B1":v<=5?"B1〜B2":v<=7?"B2〜C1":"C1+"; el.textContent=`小計 ${v}/8 → 目安 ${band}`; } });
+  const a=assessBaseline(p0); const v=$("p0verdict"); if(!v)return;
+  if(!a){ v.innerHTML=`<div class="mut">Step2–5を実測して、グレード／％を入れると「現在地」と「次の一手」が出ます。</div>`; return; }
+  v.innerHTML=`<div class="big"><b>現在地（律速＝最弱）：${a.label}</b></div>
+    <div class="mut" style="margin:4px 0">最弱技能：${a.weakest}</div>`+a.rules.map(r=>`<div class="p0rule">▶ ${r}</div>`).join("");
+}
+function savePhase0(){
+  const b={ date:todayISO(), L:p0.L??null, W:(p0.W||"").toUpperCase(), S:(p0.S||"").toUpperCase(),
+    wpm:p0.wpm??null, filler:p0.filler??null, reading:p0.reading?+p0.reading:null,
+    cefr:p0.cefr||"", lcause:p0.lcause||"", p0:{cando:p0.cando} };
+  const a=assessBaseline(b); if(a){ b.weakest=a.weakest; b.label=a.label; b.rules=a.rules; }
+  S.meta.baseline=b; save(); scheduleSync(); closePhase0(); if(view==="plan")renderPlan(); toast("ベースラインを保存しました ✓");
+}
 
 // ===== SETTINGS =====
 function renderSettings(){ $("syncUrl").value=S.sync.url||""; $("syncCode").value=S.sync.code||""; $("dailyNew").value=S.meta.dailyNew||8;
