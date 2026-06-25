@@ -117,8 +117,12 @@ let timer={id:null,sec:0,h:null};
 function startTimer(tid){ if(timer.h){stopTimer(true);} timer={id:tid,sec:0,h:setInterval(()=>{timer.sec++;const e=$("tdisp_"+tid);if(e)e.textContent=fmt(timer.sec);},1000)}; const e=$("tdisp_"+tid);if(e)e.textContent=fmt(0); toast("計測開始"); }
 function stopTimer(silent){ if(!timer.h)return; clearInterval(timer.h); const m=Math.max(1,Math.round(timer.sec/60)); const tid=timer.id; timer={id:null,sec:0,h:null}; if(!silent){ logTask(tid,{listen:m}); toast("+"+m+"分 記録しました"); renderToday(); } }
 function fmt(s){ const m=String(Math.floor(s/60)).padStart(2,"0"),x=String(s%60).padStart(2,"0"); return m+":"+x; }
+function listenLinks(){ return `<div class="mut" style="font-size:12px;margin:8px 0 4px">🎧 おすすめ素材（タップで開く）</div>`+
+  `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">`+
+  (C.listenSources||[]).map(s=>`<a class="link" style="font-size:12px;border:1px solid var(--line);border-radius:20px;padding:4px 10px;text-decoration:none" href="${s.url}" target="_blank" rel="noopener" title="${esc(s.note||'')}">${esc(s.nm)}</a>`).join("")+`</div>`; }
 function shadowUI(t){ return `
-  <p class="mut">英語の臨床音声を聞こえたまま0.5拍遅れで真似る。素材：医療系ポッドキャスト/講義、OET公式サンプル等。</p>
+  <p class="mut">英語の臨床音声を聞こえたまま0.5拍遅れで真似る。下の素材から1つ選んで。</p>
+  ${listenLinks()}
   <div class="timer" id="tdisp_${t.id}">00:00</div>
   <div class="btns"><button onclick="startTimer('${t.id}')">▶ 計測開始</button><button class="warn" onclick="stopTimer()">■ 停止して記録</button></div>
   <label>または手入力（分）</label>
@@ -147,15 +151,15 @@ function roleUI(t){
     <div class="btns"><button class="good" onclick="finishRole('${t.id}',${t.min})">✓ 完了して記録</button></div>`;
 }
 // 音読wpm自動計測（150語を音読→停止で語/分を算出）
-let wpmT={sec:0,h:null};
+let wpmT={sec:0,h:null,disp:null};
 function wpmWidget(targetId){ return `<div class="panel" style="background:var(--panel2);margin:8px 0">
     <div class="mut">音読でwpm自動計測：開始 → 下の${WPM_WORDS}語を音読 → 停止で算出。</div>
     <div class="pre" style="max-height:110px;overflow:auto">${esc(C.wpmPassage)}</div>
-    <div class="timer" id="wpmDisp">00:00</div>
-    <div class="btns"><button onclick="wpmStart()">▶ 開始</button><button class="warn" onclick="wpmStop('${targetId}')">■ 停止して算出</button></div>
+    <div class="timer" id="wd_${targetId}">00:00</div>
+    <div class="btns"><button onclick="wpmStart('${targetId}')">▶ 開始</button><button class="warn" onclick="wpmStop('${targetId}')">■ 停止して算出</button></div>
   </div>`; }
-function wpmStart(){ if(wpmT.h)clearInterval(wpmT.h); wpmT={sec:0,h:setInterval(()=>{wpmT.sec++;const e=$("wpmDisp");if(e)e.textContent=fmt(wpmT.sec);},1000)}; const e=$("wpmDisp");if(e)e.textContent="00:00"; toast("音読開始"); }
-function wpmStop(targetId){ if(!wpmT.h)return; clearInterval(wpmT.h); const sec=wpmT.sec; wpmT={sec:0,h:null}; if(sec<3){toast("短すぎます");return;} const wpm=Math.round(WPM_WORDS/sec*60); const inp=$(targetId); if(inp){inp.value=wpm; inp.dispatchEvent(new Event("input"));} toast("wpm = "+wpm+"（記入しました）"); }
+function wpmStart(targetId){ if(wpmT.h)clearInterval(wpmT.h); const disp="wd_"+targetId; wpmT={sec:0,disp,h:setInterval(()=>{wpmT.sec++;const e=$(disp);if(e)e.textContent=fmt(wpmT.sec);},1000)}; const e=$(disp);if(e)e.textContent="00:00"; toast("音読開始"); }
+function wpmStop(targetId){ if(!wpmT.h)return; clearInterval(wpmT.h); const sec=wpmT.sec, disp=wpmT.disp; wpmT={sec:0,h:null,disp:null}; if(sec<3){toast("短すぎます");return;} const wpm=Math.round(WPM_WORDS/sec*60); const inp=$(targetId); if(inp){inp.value=wpm; inp.dispatchEvent(new Event("input"));} const e=$(disp); if(e)e.textContent=fmt(sec); toast("wpm = "+wpm+"（記入しました）"); }
 function finishRole(id,defMin){ const m=+($("min_"+id).value||defMin); const w=$("wpm_"+id).value, f=$("fil_"+id).value;
   logTask(id,{speak:m, note:$("note_"+id).value||undefined, wpm:w===""?undefined:+w, filler:f===""?undefined:+f});
   toast("+"+m+"分 記録しました"); renderToday(); }
@@ -163,6 +167,7 @@ function finishRole(id,defMin){ const m=+($("min_"+id).value||defMin); const w=$
 // --- pronunciation ---
 function pronUI(t){ return `<p class="big"><b>発音・流暢性 / または OETリスニング</b></p>
   <p class="mut">録音→文字起こしを下のプロンプトに貼ってAIに診断させる。リスニング日にしてもOK。</p>
+  ${listenLinks()}
   <div class="btns"><button onclick='copyText(${jstr(C.pron)})'>📋 発音診断プロンプトをコピー</button>
     <button class="ghost" onclick='copyText(${jstr(C.wpmPassage)})'>📋 音読パッセージ(${WPM_WORDS}語)</button></div>
   <label>かけた時間(分)</label>

@@ -91,6 +91,15 @@ Stay in character until "END", then score calm clarity under time pressure, prio
 and give me 5 idiomatic phrases Canadians actually use that I missed.` }
 ],
 
+// リスニング/シャドーイングの素材（タップで開く・すべて実在の無料ソース）
+listenSources: [
+  { nm:"ACCRAC（麻酔・集中治療レビュー）", url:"https://accrac.com/", note:"試験レビュー向けの定番。1本30–60分・北米アクセント" },
+  { nm:"Depth of Anesthesia（通説を検証）", url:"https://depthofanesthesia.com/", note:"生理・薬理を症例で深掘り" },
+  { nm:"TopMedTalk（周術期医学）", url:"https://www.topmedtalk.com/", note:"英/国際アクセント慣れに" },
+  { nm:"IBCC Podcast（集中治療）", url:"https://ibccpodcast.libsyn.com/", note:"章ごとの要約・ICU英語" },
+  { nm:"OET公式 Listening（試験形式）", url:"https://oet.com/ready/listening", note:"本番形式の医療リスニング＋無料サンプル" }
+],
+
 // 発音・流暢性（録音の文字起こしを貼って使う）
 pron:
 `I will paste a transcript of my own speaking (from a recording).
